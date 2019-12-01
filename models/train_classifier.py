@@ -75,6 +75,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
                   y = list(Y_test.values[:, i])
                   y_pred = list(Y_pred[:, i])
                   target_names = ['is_{}'.format(col), 'is_not_{}'.format(col)]
+		  print(classification_report(y, y_pred, target_names=target_names)
 
           return 'None'
 
