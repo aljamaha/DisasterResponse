@@ -8,34 +8,34 @@ from nltk.tokenize import word_tokenize
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
 import joblib
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import LinearSVC
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import classification_report, accuracy_score
 
 def load_data(database_filepath):
-		  '''
-		  Inputs: database_filepath
-		  Outputs:
+	  '''
+	  Inputs: database_filepath
+	  Outputs:
 		  			X: inputs to ML model
 		  			Y: outputs to ML model
 		  			category_names
-		  '''
-          engine    = create_engine('sqlite:///'+database_filepath)   #create connection
-          con       = engine.connect()                                #connect to db    
-          df        = pd.read_sql_table('Figure8', con)               #read data
-          X         = df["message"]
-          Y         = df.drop(labels=["message", "original", "genre"], axis=1)
-          category_names = Y.columns
+	  '''
+	  engine    = create_engine('sqlite:///'+database_filepath)   #create connection
+	  con       = engine.connect()                                #connect to db    
+	  df        = pd.read_sql_table('Figure8', con)               #read data
+	  X         = df["message"]
+	  Y         = df.drop(labels=["message", "original", "genre"], axis=1)
+	  category_names = Y.columns
 
-          return X, Y, category_names
+	  return X, Y, category_names
 
 def tokenize(text):
-		  '''
-		  Inputs: text
-		  Outputs: processed and cleaned text
-		  '''
+          '''
+	  Inputs: text
+	  Outputs: processed and cleaned text
+          '''
           text   = text.lower()                                                           #lowercase
           text   = re.sub(r"[^a-zA-Z0-9]", " ", text)                           #remove punctuations
           tokens = word_tokenize(text)                                          #create tokens
@@ -44,9 +44,7 @@ def tokenize(text):
           return clean
 
 def build_model():
-		  '''
-		  Outputs: pipeline for ML
-		  '''
+          '''Outputs: pipeline for ML'''
           basic_logit = LogisticRegression() #LR
 
           pipeline = Pipeline([
@@ -54,33 +52,39 @@ def build_model():
                                         ('tfidf', TfidfTransformer()),
                                         ('clf', MultiOutputClassifier(OneVsRestClassifier(LinearSVC())))
                                      ])
-    
+          parameters = {
+                'tfidf__smooth_idf':[True, False],
+                'clf__estimator__estimator__C': [1, 2, 5]
+             }
+          cv = GridSearchCV(pipeline,param_grid= parameters,  scoring='precision_samples', cv = 5)
+
           return pipeline
 
 def evaluate_model(model, X_test, Y_test, category_names):
-		  '''
-		  Inputs: 
-		  			model: ML model
-		  			X_test: ML datasets input test
-		  			Y_test: ML datasets output test
-		  '''
-		  
+          '''
+	  Inputs: 
+ 			model: ML model
+			X_test: ML datasets input test
+ 			Y_test: ML datasets output test
+          '''
+
           Y_pred = model.predict(X_test)
     
           for i, col in enumerate(category_names):
-          'model evaluation'    
+                  'model evaluation'    
                   y = list(Y_test.values[:, i])
                   y_pred = list(Y_pred[:, i])
                   target_names = ['is_{}'.format(col), 'is_not_{}'.format(col)]
-        
+
           return 'None'
 
 def save_model(model, model_filepath):
-		  '''
-		  saves ML model
-		  '''
-          joblib.dump(model, model_filepath)
-          return 'None'
+	  '''
+	  saves ML model
+	  '''
+	  joblib.dump(model, model_filepath)
+
+	  return 'None'
 
 def main():
     if len(sys.argv) == 3:
