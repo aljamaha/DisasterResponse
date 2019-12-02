@@ -1,5 +1,7 @@
 # DisasterResponse
 
+The project is intended to use ML to help in dealing with disasters. It uses NLP to understand tweets relevant for a disaster response.
+
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 
